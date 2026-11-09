@@ -19,7 +19,7 @@ end
 
 local VALID_KEYS = {
     ["kjZzYz4Bnee6prJX"] = true,
-    ["KoBd63iyUzQvPtyO"] = false,
+    ["KoBd63iyUzQvPtyO"] = true,
     ["o96Vl9L5TTgGz9Bo"] = true,
     ["GrDilD2RPAyqFgxJ"] = true,
     ["rBxzUH1MDKlukDdy"] = true,
