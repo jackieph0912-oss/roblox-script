@@ -1,10 +1,21 @@
--- APPLE FARM V7.1 + KEY SYSTEM | XENO
--- Nhap dung 1 trong 5 key de mo Apple Farm
--- Luu y: Xac thuc key tren client chi la khoa giao dien.
+-- APPLE FARM | MODERN V8 + 5 KEY
+-- Compact UI, drag by header, minimize, ON/OFF, speed, height, noclip.
+-- Client-only key gate. Does not bypass server validation.
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
-local pg = player:WaitForChild("PlayerGui")
+local playerGui = player:WaitForChild("PlayerGui")
+local env = (getgenv and getgenv()) or _G
+
+for _, key in ipairs({"AppleModernV8Stop", "AppleFarmV71Stop", "AppleFarmV8Stop"}) do
+    if type(env[key]) == "function" then pcall(env[key]) end
+end
+for _, name in ipairs({"AppleModernV8", "AppleFarmKeyGate", "AppleFarmV71"}) do
+    local old = playerGui:FindFirstChild(name)
+    if old then old:Destroy() end
+end
 
 local VALID_KEYS = {
     ["kjZzYz4Bnee6prJX"] = true,
@@ -14,538 +25,334 @@ local VALID_KEYS = {
     ["rBxzUH1MDKlukDdy"] = true,
 }
 
-local previous = pg:FindFirstChild("AppleFarmKeyGate")
-if previous then previous:Destroy() end
+local C = {
+    bg = Color3.fromRGB(15, 19, 29), panel = Color3.fromRGB(23, 29, 42),
+    field = Color3.fromRGB(33, 41, 57), outline = Color3.fromRGB(58, 71, 91),
+    text = Color3.fromRGB(239, 244, 252), muted = Color3.fromRGB(153, 169, 191),
+    blue = Color3.fromRGB(79, 133, 255), green = Color3.fromRGB(41, 185, 119),
+    red = Color3.fromRGB(224, 86, 100)
+}
 
-local function startAppleFarm()
+local gui = Instance.new("ScreenGui")
+gui.Name = "AppleModernV8"
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 150
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = playerGui
 
-    -- APPLE FARM V7.1 | XENO
-    -- Tu di chuyen den Apple + Noclip
-    -- Khong goi remote, khong cho nhat
+local function round(obj, radius)
+    local u = Instance.new("UICorner")
+    u.CornerRadius = UDim.new(0, radius or 10)
+    u.Parent = obj
+end
+local function border(obj)
+    local s = Instance.new("UIStroke")
+    s.Color = C.outline
+    s.Thickness = 1
+    s.Transparency = 0.25
+    s.Parent = obj
+end
+local function frame(parent, x,y,w,h,color)
+    local f = Instance.new("Frame")
+    f.Position = UDim2.fromOffset(x,y)
+    f.Size = UDim2.fromOffset(w,h)
+    f.BackgroundColor3 = color or C.panel
+    f.BorderSizePixel = 0
+    f.Parent = parent
+    round(f,10)
+    return f
+end
+local function text(parent, content, x,y,w,h,size,color,bold)
+    local t = Instance.new("TextLabel")
+    t.BackgroundTransparency = 1
+    t.Position = UDim2.fromOffset(x,y)
+    t.Size = UDim2.fromOffset(w,h)
+    t.Text = content
+    t.TextColor3 = color or C.text
+    t.Font = bold and Enum.Font.GothamBold or Enum.Font.Gotham
+    t.TextSize = size or 12
+    t.TextXAlignment = Enum.TextXAlignment.Left
+    t.TextTruncate = Enum.TextTruncate.AtEnd
+    t.Parent = parent
+    return t
+end
+local function button(parent, content,x,y,w,h,color)
+    local b = Instance.new("TextButton")
+    b.Position = UDim2.fromOffset(x,y)
+    b.Size = UDim2.fromOffset(w,h)
+    b.BackgroundColor3 = color or C.field
+    b.TextColor3 = C.text
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 13
+    b.Text = content
+    b.AutoButtonColor = true
+    b.BorderSizePixel = 0
+    b.Parent = parent
+    round(b,8)
+    return b
+end
 
-    local Players = game:GetService("Players")
-    local RunService = game:GetService("RunService")
+local main = frame(gui,0,0,300,306,C.bg)
+main.Position = UDim2.new(.5,-150,.28,0)
+main.Active = true
+border(main)
+local heading = frame(main,0,0,300,46,C.panel)
+heading.Active = true
+text(heading,"APPLE FARM",15,8,185,21,16,C.text,true)
+text(heading,"MODERN  V8",16,27,180,12,10,C.muted,false)
+local minimize = button(heading,"−",236,10,25,26,C.field)
+local close = button(heading,"×",267,10,25,26,C.field)
 
-    local player = Players.LocalPlayer
-    local playerGui = player:WaitForChild("PlayerGui")
-    local env = getgenv and getgenv() or _G
+local body = frame(main,0,47,300,259,C.bg)
+body.BackgroundTransparency = 1
+local statusBar = frame(body,12,8,276,50,C.panel)
+text(statusBar,"FARM STATUS",12,6,155,14,10,C.muted,true)
+local stateText = text(statusBar,"OFFLINE",12,21,160,24,15,C.red,true)
+local power = button(statusBar,"OFF",211,10,54,30,C.red)
+local speedRow = frame(body,12,67,276,52,C.panel)
+text(speedRow,"Move speed",12,7,140,16,12,C.text,true)
+local speedValue = text(speedRow,"65",13,27,100,18,13,C.muted)
+local speedMinus = button(speedRow,"−",207,10,26,30,C.field)
+local speedPlus = button(speedRow,"+",239,10,26,30,C.field)
+local heightRow = frame(body,12,126,276,52,C.panel)
+text(heightRow,"Height offset",12,7,145,16,12,C.text,true)
+local heightValue = text(heightRow,"0.00",13,27,100,18,13,C.muted)
+local heightMinus = button(heightRow,"−",207,10,26,30,C.field)
+local heightPlus = button(heightRow,"+",239,10,26,30,C.field)
+local info = frame(body,12,185,276,56,C.panel)
+local appleCount = text(info,"Apples nearby: 0",12,7,252,18,12,C.text,true)
+local infoText = text(info,"Ready to start",12,29,252,17,11,C.muted)
+local mini = false
+local function setMini(isMini)
+    mini = isMini
+    body.Visible = not mini
+    main.Size = UDim2.fromOffset(300,mini and 46 or 306)
+    minimize.Text = mini and "+" or "−"
+end
+minimize.MouseButton1Click:Connect(function() setMini(not mini) end)
 
-    -- Dung cac ban cu khi chay lai
-    for _, key in ipairs({
-        "AppleFarmV71Stop",
-        "AppleFarmV8Stop"
-    }) do
-        if type(env[key]) == "function" then
-            pcall(env[key])
-        end
+-- Draggable ONLY from header; controls never compete with dragging.
+local dragging, origin, initial = false, nil, nil
+local moveConnection, endConnection
+heading.InputBegan:Connect(function(input)
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+    local p = UIS:GetMouseLocation()
+    local objects = playerGui:GetGuiObjectsAtPosition(p.X,p.Y)
+    if objects[1] and (objects[1] == close or objects[1] == minimize) then return end
+    dragging = true
+    origin = input.Position
+    initial = main.Position
+end)
+moveConnection = UIS.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local d = input.Position-origin
+        main.Position = UDim2.new(initial.X.Scale,initial.X.Offset+d.X,initial.Y.Scale,initial.Y.Offset+d.Y)
     end
+end)
+endConnection = UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+end)
 
-    -- CONFIG
-    local SPEED = 65
-    local HEIGHT_OFFSET = 0
-    local ARRIVE_DISTANCE = 0.8
-    local TARGET_TIMEOUT = 3
-
-    local enabled = false
-    local target = nil
-    local targetTimer = 0
-    local skipped = {}
-
-    local farmConnection
-    local noclipConnection
-    local characterConnection
-    local gui
-
-    -- Luu trang thai va cham ban dau
-    local originalCollision = {}
-
-    local VALID_APPLES = {
-        Apple_GreenStreak = true,
-        Apple_Frost = true,
-        Apple_GoldenSparkle = true,
-        Apple_RedSpeckle = true,
-        Apple_Flame = true,
-        Apple_Candy = true,
-        Apple_Rainbow = true,
-        Apple_Diamond = true,
-        Apple_Galaxy = true,
-        Apple_Snowflake = true,
-        Apple_Toxic = true,
-        Apple_Shadow = true,
-    }
-
-    local function getRoot()
-        local char = player.Character
-        local hum = char and
-            char:FindFirstChildOfClass("Humanoid")
-        local root = char and
-            char:FindFirstChild("HumanoidRootPart")
-
-        if hum and hum.Health > 0 and root then
-            return root, char, hum
-        end
-    end
-
-    local function getFolder()
-        return workspace:FindFirstChild("AutumnApples")
-    end
-
-    local function getPart(model)
-        if not model or not model.Parent then
-            return nil
-        end
-
-        return model.PrimaryPart
-            or model:FindFirstChildWhichIsA(
-                "BasePart", true
-            )
-    end
-
-    local function nearestApple(root)
-        local folder = getFolder()
-        if not folder then return nil, 0 end
-
-        local best
-        local bestDist = math.huge
-        local count = 0
-
-        for _, model in ipairs(folder:GetChildren()) do
-            if model:IsA("Model")
-                and VALID_APPLES[model.Name] then
-
-                local part = getPart(model)
-
-                if part then
-                    count = count + 1
-
-                    if not skipped[model] then
-                        local distance =
-                            (root.Position - part.Position).Magnitude
-
-                        if distance < bestDist then
-                            bestDist = distance
-                            best = model
-                        end
-                    end
+local unlocked = false
+local enabled = false
+local speed, heightOffset = 65,0
+local arriveDistance, timeout = .8, 3
+local current, elapsed = nil,0
+local skipped = {}
+local savedCollision = {}
+local farmConn, noclipConn, respawnConn
+local stopped = false
+local validApples = {
+    Apple_GreenStreak=true,Apple_Frost=true,Apple_GoldenSparkle=true,
+    Apple_RedSpeckle=true,Apple_Flame=true,Apple_Candy=true,
+    Apple_Rainbow=true,Apple_Diamond=true,Apple_Galaxy=true,
+    Apple_Snowflake=true,Apple_Toxic=true,Apple_Shadow=true
+}
+local function getRoot()
+    local c = player.Character
+    local h = c and c:FindFirstChildOfClass("Humanoid")
+    local r = c and c:FindFirstChild("HumanoidRootPart")
+    if h and h.Health > 0 then return r,c end
+end
+local function getPart(m)
+    if not m or not m.Parent then return nil end
+    return m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart",true)
+end
+local function nearest(root)
+    local folder = workspace:FindFirstChild("AutumnApples")
+    if not folder then return nil,0 end
+    local chosen,best,count = nil,math.huge,0
+    for _,m in ipairs(folder:GetChildren()) do
+        if m:IsA("Model") and validApples[m.Name] then
+            local part = getPart(m)
+            if part then
+                count += 1
+                local dist = (part.Position-root.Position).Magnitude
+                if not skipped[m] and dist < best then
+                    best=dist; chosen=m
                 end
             end
         end
-
-        return best, count
     end
-
-    -- =========================
-    -- NOCLIP
-    -- =========================
-
-    local function applyNoclip()
+    return chosen,count
+end
+local function restoreCollisions()
+    for part,value in pairs(savedCollision) do
+        if part and part.Parent then pcall(function() part.CanCollide=value end) end
+    end
+    table.clear(savedCollision)
+end
+local function stopFarm()
+    enabled = false
+    if farmConn then farmConn:Disconnect(); farmConn=nil end
+    if noclipConn then noclipConn:Disconnect(); noclipConn=nil end
+    restoreCollisions()
+    current=nil; elapsed=0
+    power.Text="OFF"; power.BackgroundColor3=C.red
+    stateText.Text="OFFLINE"; stateText.TextColor3=C.red
+    infoText.Text="Stopped"
+end
+local function startFarm()
+    if not unlocked then return end
+    if not workspace:FindFirstChild("AutumnApples") then
+        infoText.Text="AutumnApples not found"; return
+    end
+    enabled=true
+    skipped={}; current=nil; elapsed=0
+    power.Text="ON"; power.BackgroundColor3=C.green
+    stateText.Text="RUNNING"; stateText.TextColor3=C.green
+    noclipConn=RunService.Stepped:Connect(function()
         if not enabled then return end
-
-        local _, char = getRoot()
+        local _,char=getRoot()
         if not char then return end
-
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                if originalCollision[part] == nil then
-                    originalCollision[part] = part.CanCollide
-                end
-
-                part.CanCollide = false
+        for _,p in ipairs(char:GetDescendants()) do
+            if p:IsA("BasePart") then
+                if savedCollision[p]==nil then savedCollision[p]=p.CanCollide end
+                p.CanCollide=false
             end
         end
-    end
-
-    local function restoreCollision()
-        for part, state in pairs(originalCollision) do
-            if part and part.Parent then
-                pcall(function()
-                    part.CanCollide = state
-                end)
-            end
-        end
-
-        table.clear(originalCollision)
-    end
-
-    local function startNoclip()
-        if noclipConnection then
-            noclipConnection:Disconnect()
-        end
-
-        applyNoclip()
-
-        noclipConnection = RunService.Stepped:Connect(function()
-            if enabled then
-                applyNoclip()
-            end
-        end)
-    end
-
-    local function stopNoclip()
-        if noclipConnection then
-            noclipConnection:Disconnect()
-            noclipConnection = nil
-        end
-
-        restoreCollision()
-    end
-
-    -- =========================
-    -- GUI
-    -- =========================
-
-    for _, name in ipairs({
-        "AppleFarmV71",
-        "AppleFarmV8",
-        "AppleFarmV7",
-        "AppleFarmV6",
-        "AppleFarmV5"
-    }) do
-        local old = playerGui:FindFirstChild(name)
-        if old then
-            old:Destroy()
-        end
-    end
-
-    gui = Instance.new("ScreenGui")
-    gui.Name = "AppleFarmV71"
-    gui.ResetOnSpawn = false
-    gui.Parent = playerGui
-
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.fromOffset(270, 275)
-    frame.Position = UDim2.new(0.5, -135, 0.2, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(23,26,36)
-    frame.Active = true
-    frame.Draggable = true
-    frame.Parent = gui
-
-    Instance.new("UICorner", frame).CornerRadius =
-        UDim.new(0, 12)
-
-    local function label(text, y)
-        local l = Instance.new("TextLabel")
-        l.Size = UDim2.fromOffset(250, 24)
-        l.Position = UDim2.fromOffset(10, y)
-        l.BackgroundTransparency = 1
-        l.Text = text
-        l.TextColor3 = Color3.new(1,1,1)
-        l.Font = Enum.Font.Gotham
-        l.TextSize = 12
-        l.Parent = frame
-        return l
-    end
-
-    local function button(text, x, y, w, h)
-        local b = Instance.new("TextButton")
-        b.Size = UDim2.fromOffset(w,h)
-        b.Position = UDim2.fromOffset(x,y)
-        b.Text = text
-        b.TextColor3 = Color3.new(1,1,1)
-        b.BackgroundColor3 =
-            Color3.fromRGB(55,105,180)
-        b.Font = Enum.Font.GothamBold
-        b.TextSize = 13
-        b.Parent = frame
-
-        Instance.new("UICorner",b).CornerRadius =
-            UDim.new(0,8)
-
-        return b
-    end
-
-    local title = label("APPLE MOVE V7.1 | NOCLIP",8)
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 16
-
-    local toggle = button("OFF",15,38,240,40)
-    toggle.BackgroundColor3 =
-        Color3.fromRGB(185,45,45)
-
-    local speedMinus = button("SPEED -",15,88,115,32)
-    local speedPlus = button("SPEED +",140,88,115,32)
-
-    local heightMinus = button("HEIGHT -",15,129,115,32)
-    local heightPlus = button("HEIGHT +",140,129,115,32)
-
-    local speedLabel = label("Speed: 65",170)
-    local heightLabel = label("Height offset: 0",191)
-    local noclipLabel = label("Noclip: OFF",211)
-    local countLabel = label("Apples: 0",231)
-    local status = label("Ready",251)
-
-    local function resetTarget()
-        target = nil
-        targetTimer = 0
-    end
-
-    local function updateToggle()
-        toggle.Text = enabled and "ON" or "OFF"
-
-        toggle.BackgroundColor3 = enabled
-            and Color3.fromRGB(35,175,80)
-            or Color3.fromRGB(185,45,45)
-
-        noclipLabel.Text = enabled
-            and "Noclip: ON"
-            or "Noclip: OFF"
-    end
-
-    local function stopFarm()
-        enabled = false
-
-        if farmConnection then
-            farmConnection:Disconnect()
-            farmConnection = nil
-        end
-
-        stopNoclip()
-        resetTarget()
-
-        updateToggle()
-        status.Text = "Stopped"
-    end
-
-    local function startFarm()
-        stopFarm()
-
-        if not getFolder() then
-            status.Text = "AutumnApples not found"
-            return
-        end
-
-        enabled = true
-        skipped = {}
-        resetTarget()
-
-        updateToggle()
-        startNoclip()
-
-        farmConnection = RunService.Heartbeat:Connect(function(dt)
-            if not enabled then return end
-
-            local root = getRoot()
-            if not root then return end
-
-            if not target or not getPart(target) then
-                resetTarget()
-
-                local nextApple, count = nearestApple(root)
-                countLabel.Text = "Apples: "..count
-
-                if not nextApple then
-                    skipped = {}
-                    status.Text = "Waiting for apples..."
-                    return
-                end
-
-                target = nextApple
-            end
-
-            local part = getPart(target)
-            if not part then
-                resetTarget()
+    end)
+    farmConn=RunService.Heartbeat:Connect(function(dt)
+        if not enabled then return end
+        local root=getRoot()
+        if not root then infoText.Text="Waiting for character"; return end
+        if not getPart(current) then current=nil; elapsed=0 end
+        if not current then
+            local nxt,count=nearest(root)
+            appleCount.Text="Apples nearby: "..count
+            if not nxt then
+                -- Retry after exhaustion in case models respawn.
+                skipped={}
+                infoText.Text="Waiting for apples..."
                 return
             end
-
-            targetTimer = targetTimer + dt
-
-            -- Giu nguyen toa do cua V7
-            local destination = Vector3.new(
-                part.Position.X,
-                part.Position.Y + HEIGHT_OFFSET,
-                part.Position.Z
-            )
-
-            local delta = destination - root.Position
-            local distance = delta.Magnitude
-
-            status.Text = "Moving: "..target.Name
-
-            if distance > ARRIVE_DISTANCE then
-                local step = math.min(
-                    SPEED * math.min(dt,0.1),
-                    distance
-                )
-
-                local nextPosition =
-                    root.Position + delta.Unit * step
-
-                root.AssemblyLinearVelocity = Vector3.zero
-                root.AssemblyAngularVelocity = Vector3.zero
-
-                root.CFrame = CFrame.new(nextPosition)
-            else
-                -- Den vi tri Apple la chuyen qua khac
-                -- Khong cho, khong goi remote
-                skipped[target] = true
-                resetTarget()
-            end
-
-            if targetTimer >= TARGET_TIMEOUT then
-                if target then
-                    skipped[target] = true
-                end
-                resetTarget()
-            end
-        end)
-    end
-
-    toggle.MouseButton1Click:Connect(function()
-        if enabled then
-            stopFarm()
+            current=nxt; elapsed=0
+        end
+        local part=getPart(current)
+        if not part then current=nil; elapsed=0; return end
+        elapsed += dt
+        local pos=part.Position+Vector3.new(0,heightOffset,0)
+        local delta=pos-root.Position
+        local dist=delta.Magnitude
+        infoText.Text="Target: "..current.Name
+        if dist > arriveDistance then
+            local step=math.min(speed*math.min(dt,.1),dist)
+            local nextPos=root.Position+delta.Unit*step
+            root.AssemblyLinearVelocity=Vector3.zero
+            root.AssemblyAngularVelocity=Vector3.zero
+            root.CFrame=CFrame.new(nextPos)
         else
-            startFarm()
+            skipped[current]=true
+            current=nil; elapsed=0
+        end
+        if current and elapsed >= timeout then
+            skipped[current]=true
+            current=nil; elapsed=0
         end
     end)
-
-    speedMinus.MouseButton1Click:Connect(function()
-        SPEED = math.max(10,SPEED-10)
-        speedLabel.Text = "Speed: "..SPEED
-    end)
-
-    speedPlus.MouseButton1Click:Connect(function()
-        SPEED = math.min(2000,SPEED+10)
-        speedLabel.Text = "Speed: "..SPEED
-    end)
-
-    heightMinus.MouseButton1Click:Connect(function()
-        HEIGHT_OFFSET = math.max(-5, HEIGHT_OFFSET-0.25)
-
-        heightLabel.Text = string.format(
-            "Height offset: %.2f", HEIGHT_OFFSET
-        )
-    end)
-
-    heightPlus.MouseButton1Click:Connect(function()
-        HEIGHT_OFFSET = math.min(4, HEIGHT_OFFSET+0.25)
-
-        heightLabel.Text = string.format(
-            "Height offset: %.2f", HEIGHT_OFFSET
-        )
-    end)
-
-    characterConnection = player.CharacterAdded:Connect(function()
-        restoreCollision()
-        resetTarget()
-        skipped = {}
-
-        if enabled then
-            task.wait(0.5)
-            applyNoclip()
-        end
-    end)
-
-    local function stopScript()
-        stopFarm()
-
-        if characterConnection then
-            characterConnection:Disconnect()
-            characterConnection = nil
-        end
-
-        if gui and gui.Parent then
-            gui:Destroy()
-        end
-    end
-
-    env.AppleFarmV71Stop = stopScript
-
-    gui.Destroying:Connect(function()
-        stopFarm()
-    end)
-
-    print("Apple Farm V7.1 loaded")
-
-end -- startAppleFarm
-
-local screen = Instance.new("ScreenGui")
-screen.Name = "AppleFarmKeyGate"
-screen.ResetOnSpawn = false
-screen.DisplayOrder = 120
-screen.Parent = pg
-
-local frame = Instance.new("Frame")
-frame.Size = UDim2.fromOffset(335, 225)
-frame.Position = UDim2.new(0.5, -167, 0.5, -112)
-frame.BackgroundColor3 = Color3.fromRGB(22, 27, 39)
-frame.Active = true
-frame.Draggable = true
-frame.Parent = screen
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 13)
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(65, 150, 255)
-stroke.Thickness = 2
-stroke.Parent = frame
-
-local function label(text, y, h, size)
-    local obj = Instance.new("TextLabel")
-    obj.Size = UDim2.fromOffset(305, h)
-    obj.Position = UDim2.fromOffset(15, y)
-    obj.BackgroundTransparency = 1
-    obj.Text = text
-    obj.TextColor3 = Color3.fromRGB(240, 245, 255)
-    obj.Font = Enum.Font.GothamBold
-    obj.TextSize = size
-    obj.Parent = frame
-    return obj
 end
-label("APPLE FARM | KEY SYSTEM", 13, 32, 17)
-label("Nhap 1 trong 5 key de mo menu farm", 46, 25, 12)
+power.MouseButton1Click:Connect(function()
+    if not unlocked then return end
+    if enabled then stopFarm() else startFarm() end
+end)
+speedMinus.MouseButton1Click:Connect(function()
+    speed=math.max(10,speed-10); speedValue.Text=tostring(speed)
+end)
+speedPlus.MouseButton1Click:Connect(function()
+    speed=math.min(2000,speed+10); speedValue.Text=tostring(speed)
+end)
+heightMinus.MouseButton1Click:Connect(function()
+    heightOffset=math.max(-5,heightOffset-.25)
+    heightValue.Text=string.format("%.2f",heightOffset)
+end)
+heightPlus.MouseButton1Click:Connect(function()
+    heightOffset=math.min(4,heightOffset+.25)
+    heightValue.Text=string.format("%.2f",heightOffset)
+end)
+respawnConn=player.CharacterAdded:Connect(function()
+    restoreCollisions(); current=nil; elapsed=0; skipped={}
+end)
 
-local keyBox = Instance.new("TextBox")
-keyBox.Size = UDim2.fromOffset(295, 42)
-keyBox.Position = UDim2.fromOffset(20, 83)
-keyBox.BackgroundColor3 = Color3.fromRGB(36, 43, 58)
-keyBox.TextColor3 = Color3.new(1, 1, 1)
-keyBox.PlaceholderText = "Nhap key tai day..."
-keyBox.Text = ""
-keyBox.ClearTextOnFocus = false
-keyBox.Font = Enum.Font.Gotham
-keyBox.TextSize = 14
-keyBox.Parent = frame
-Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0, 8)
-
-local button = Instance.new("TextButton")
-button.Size = UDim2.fromOffset(295, 42)
-button.Position = UDim2.fromOffset(20, 137)
-button.BackgroundColor3 = Color3.fromRGB(40, 135, 225)
-button.TextColor3 = Color3.new(1, 1, 1)
-button.Text = "XAC NHAN KEY"
-button.Font = Enum.Font.GothamBold
-button.TextSize = 14
-button.Parent = frame
-Instance.new("UICorner", button).CornerRadius = UDim.new(0, 8)
-
-local status = label("Status: Dang cho key", 187, 25, 12)
-local unlocked = false
-
+local keyOverlay=frame(gui,0,0,300,306,C.bg)
+keyOverlay.Position=main.Position
+keyOverlay.Active=true
+border(keyOverlay)
+main.Visible=false
+local keyHeader=frame(keyOverlay,0,0,300,64,C.panel)
+text(keyHeader,"APPLE FARM",18,13,260,25,19,C.text,true)
+text(keyHeader,"Access key required",18,39,260,16,12,C.muted)
+text(keyOverlay,"ENTER ACCESS KEY",18,90,260,20,11,C.muted,true)
+local keyInput=Instance.new("TextBox")
+keyInput.Size=UDim2.fromOffset(264,43)
+keyInput.Position=UDim2.fromOffset(18,117)
+keyInput.BackgroundColor3=C.field
+keyInput.TextColor3=C.text
+keyInput.PlaceholderColor3=C.muted
+keyInput.PlaceholderText="Paste your key here"
+keyInput.Text=""
+keyInput.ClearTextOnFocus=false
+keyInput.Font=Enum.Font.Gotham
+keyInput.TextSize=13
+keyInput.Parent=keyOverlay
+round(keyInput,9)
+local keyButton=button(keyOverlay,"UNLOCK FARM",18,177,264,42,C.blue)
+local keyStatus=text(keyOverlay,"5 keys supported",18,230,264,26,12,C.muted)
+text(keyOverlay,"Client-side key gate",18,274,264,19,10,C.muted)
+local checking=false
 local function verify()
-    if unlocked then return end
-    local entered = keyBox.Text:match("^%s*(.-)%s*$")
+    if checking or unlocked then return end
+    local entered=keyInput.Text:match("^%s*(.-)%s*$")
     if not VALID_KEYS[entered] then
-        status.Text = "KEY SAI! Thu lai."
-        status.TextColor3 = Color3.fromRGB(255, 85, 85)
+        keyStatus.Text="Invalid key. Try again."
+        keyStatus.TextColor3=C.red
         return
     end
-    unlocked = true
-    status.Text = "Key dung! Dang mo Apple Farm..."
-    status.TextColor3 = Color3.fromRGB(80, 245, 140)
-    button.Text = "DA XAC NHAN"
-    task.defer(function()
-        local ok, err = pcall(startAppleFarm)
-        if ok then
-            if screen.Parent then screen:Destroy() end
-        else
-            warn("[APPLE FARM KEY] Failed to start:", err)
-            status.Text = "Loi mo farm: xem console"
-            status.TextColor3 = Color3.fromRGB(255, 85, 85)
-            unlocked = false
-            button.Text = "THU LAI"
-        end
-    end)
+    checking=true
+    unlocked=true
+    keyStatus.Text="Access granted"
+    keyStatus.TextColor3=C.green
+    keyButton.Text="UNLOCKED"
+    keyOverlay:Destroy()
+    main.Visible=true
 end
-button.MouseButton1Click:Connect(verify)
-keyBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then verify() end
+keyButton.MouseButton1Click:Connect(verify)
+keyInput.FocusLost:Connect(function(enter)
+    if enter then verify() end
 end)
+
+local function stopScript()
+    if stopped then return end
+    stopped=true
+    stopFarm()
+    if respawnConn then respawnConn:Disconnect(); respawnConn=nil end
+    if moveConnection then moveConnection:Disconnect(); moveConnection=nil end
+    if endConnection then endConnection:Disconnect(); endConnection=nil end
+    if gui.Parent then gui:Destroy() end
+end
+env.AppleModernV8Stop=stopScript
+close.MouseButton1Click:Connect(stopScript)
+gui.Destroying:Connect(function()
+    if not stopped then stopScript() end
+end)
+
+print("[APPLE FARM MODERN V8] Loaded")
