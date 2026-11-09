@@ -21,10 +21,12 @@ end
 -- Luu y: key bi khoa chi khi nguoi dung chay code moi.
 local VALID_KEYS = {
     ["kjZzYz4Bnee6prJX"] = true,
-    ["KoBd63iyUzQvPtyO"] = true,
+    ["KoBd63iyUzQvPtyO"] = false,
     ["o96Vl9L5TTgGz9Bo"] = true,
     ["GrDilD2RPAyqFgxJ"] = true,
-    ["rBxzUH1MDKlukDdy"] = true,
+    ["pFCygj10Juhmum6H"] = true,
+    ["wVPDSYnr4QyJj0kg"] = true,
+    ["rBxzUH1MDKlukDdy"] = false,
 }
 
 -- Luu key tren MAY DANG CHAY script, khong phai tren server chung.
