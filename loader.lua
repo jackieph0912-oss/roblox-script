@@ -1,6 +1,6 @@
 -- APPLE FARM | MODERN V8 + 5 KEY
 -- Compact UI, drag by header, minimize, ON/OFF, speed, height, noclip.
--- Client-only key gate. Does not bypass server validation.
+-- Client-side key gate with local saved key (if executor file API is available).
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -17,6 +17,8 @@ for _, name in ipairs({"AppleModernV8", "AppleFarmKeyGate", "AppleFarmV71"}) do
     if old then old:Destroy() end
 end
 
+-- Admin: doi true -> false de khoa key trong BAN SCRIPT NAY.
+-- Luu y: key bi khoa chi khi nguoi dung chay code moi.
 local VALID_KEYS = {
     ["kjZzYz4Bnee6prJX"] = true,
     ["KoBd63iyUzQvPtyO"] = true,
@@ -24,6 +26,19 @@ local VALID_KEYS = {
     ["GrDilD2RPAyqFgxJ"] = true,
     ["rBxzUH1MDKlukDdy"] = true,
 }
+
+-- Luu key tren MAY DANG CHAY script, khong phai tren server chung.
+local SAVE_FILE = "AppleFarmV8_SavedKey.txt"
+local function readSavedKey()
+    if type(readfile) ~= "function" then return nil end
+    local ok, content = pcall(readfile, SAVE_FILE)
+    if not ok or type(content) ~= "string" then return nil end
+    return content:match("^%s*(.-)%s*$")
+end
+local function saveKey(key)
+    if type(writefile) ~= "function" then return false end
+    return pcall(writefile, SAVE_FILE, key)
+end
 
 local C = {
     bg = Color3.fromRGB(15, 19, 29), panel = Color3.fromRGB(23, 29, 42),
@@ -92,18 +107,18 @@ local function button(parent, content,x,y,w,h,color)
     return b
 end
 
-local main = frame(gui,0,0,300,306,C.bg)
+local main = frame(gui,0,0,300,236,C.bg)
 main.Position = UDim2.new(.5,-150,.28,0)
 main.Active = true
 border(main)
 local heading = frame(main,0,0,300,46,C.panel)
 heading.Active = true
 text(heading,"APPLE FARM",15,8,185,21,16,C.text,true)
-text(heading,"MODERN  V8",16,27,180,12,10,C.muted,false)
+text(heading,"MODERN V8 | COMPACT",16,27,180,12,10,C.muted,false)
 local minimize = button(heading,"−",236,10,25,26,C.field)
 local close = button(heading,"×",267,10,25,26,C.field)
 
-local body = frame(main,0,47,300,259,C.bg)
+local body = frame(main,0,47,300,189,C.bg)
 body.BackgroundTransparency = 1
 local statusBar = frame(body,12,8,276,50,C.panel)
 text(statusBar,"FARM STATUS",12,6,155,14,10,C.muted,true)
@@ -119,14 +134,11 @@ text(heightRow,"Height offset",12,7,145,16,12,C.text,true)
 local heightValue = text(heightRow,"0.00",13,27,100,18,13,C.muted)
 local heightMinus = button(heightRow,"−",207,10,26,30,C.field)
 local heightPlus = button(heightRow,"+",239,10,26,30,C.field)
-local info = frame(body,12,185,276,56,C.panel)
-local appleCount = text(info,"Apples nearby: 0",12,7,252,18,12,C.text,true)
-local infoText = text(info,"Ready to start",12,29,252,17,11,C.muted)
 local mini = false
 local function setMini(isMini)
     mini = isMini
     body.Visible = not mini
-    main.Size = UDim2.fromOffset(300,mini and 46 or 306)
+    main.Size = UDim2.fromOffset(300,mini and 46 or 236)
     minimize.Text = mini and "+" or "−"
 end
 minimize.MouseButton1Click:Connect(function() setMini(not mini) end)
@@ -210,12 +222,12 @@ local function stopFarm()
     current=nil; elapsed=0
     power.Text="OFF"; power.BackgroundColor3=C.red
     stateText.Text="OFFLINE"; stateText.TextColor3=C.red
-    infoText.Text="Stopped"
 end
 local function startFarm()
     if not unlocked then return end
     if not workspace:FindFirstChild("AutumnApples") then
-        infoText.Text="AutumnApples not found"; return
+        warn("[APPLE FARM] AutumnApples not found")
+        return
     end
     enabled=true
     skipped={}; current=nil; elapsed=0
@@ -235,15 +247,13 @@ local function startFarm()
     farmConn=RunService.Heartbeat:Connect(function(dt)
         if not enabled then return end
         local root=getRoot()
-        if not root then infoText.Text="Waiting for character"; return end
+        if not root then return end
         if not getPart(current) then current=nil; elapsed=0 end
         if not current then
-            local nxt,count=nearest(root)
-            appleCount.Text="Apples nearby: "..count
+            local nxt=nearest(root)
             if not nxt then
                 -- Retry after exhaustion in case models respawn.
                 skipped={}
-                infoText.Text="Waiting for apples..."
                 return
             end
             current=nxt; elapsed=0
@@ -254,7 +264,6 @@ local function startFarm()
         local pos=part.Position+Vector3.new(0,heightOffset,0)
         local delta=pos-root.Position
         local dist=delta.Magnitude
-        infoText.Text="Target: "..current.Name
         if dist > arriveDistance then
             local step=math.min(speed*math.min(dt,.1),dist)
             local nextPos=root.Position+delta.Unit*step
@@ -293,7 +302,7 @@ respawnConn=player.CharacterAdded:Connect(function()
     restoreCollisions(); current=nil; elapsed=0; skipped={}
 end)
 
-local keyOverlay=frame(gui,0,0,300,306,C.bg)
+local keyOverlay=frame(gui,0,0,300,265,C.bg)
 keyOverlay.Position=main.Position
 keyOverlay.Active=true
 border(keyOverlay)
@@ -316,29 +325,44 @@ keyInput.TextSize=13
 keyInput.Parent=keyOverlay
 round(keyInput,9)
 local keyButton=button(keyOverlay,"UNLOCK FARM",18,177,264,42,C.blue)
-local keyStatus=text(keyOverlay,"5 keys supported",18,230,264,26,12,C.muted)
-text(keyOverlay,"Client-side key gate",18,274,264,19,10,C.muted)
+local keyStatus=text(keyOverlay,"5 keys supported",18,218,264,19,12,C.muted)
+text(keyOverlay,"Local key is remembered on this device",18,238,264,19,10,C.muted)
 local checking=false
-local function verify()
-    if checking or unlocked then return end
-    local entered=keyInput.Text:match("^%s*(.-)%s*$")
-    if not VALID_KEYS[entered] then
-        keyStatus.Text="Invalid key. Try again."
-        keyStatus.TextColor3=C.red
-        return
-    end
-    checking=true
+local function unlock(key, fromSaved)
     unlocked=true
+    checking=false
+    if not fromSaved then saveKey(key) end
     keyStatus.Text="Access granted"
     keyStatus.TextColor3=C.green
     keyButton.Text="UNLOCKED"
     keyOverlay:Destroy()
     main.Visible=true
 end
+local function verify()
+    if checking or unlocked then return end
+    checking=true
+    local entered=keyInput.Text:match("^%s*(.-)%s*$")
+    if VALID_KEYS[entered] ~= true then
+        keyStatus.Text="Invalid or disabled key."
+        keyStatus.TextColor3=C.red
+        checking=false
+        return
+    end
+    unlock(entered, false)
+end
 keyButton.MouseButton1Click:Connect(verify)
 keyInput.FocusLost:Connect(function(enter)
     if enter then verify() end
 end)
+
+-- Tu mo khoa neu key da luu van dang duoc bat.
+local savedKey=readSavedKey()
+if savedKey and VALID_KEYS[savedKey] == true then
+    unlock(savedKey, true)
+elseif savedKey then
+    keyStatus.Text="Saved key disabled. Enter another key."
+    keyStatus.TextColor3=C.red
+end
 
 local function stopScript()
     if stopped then return end
